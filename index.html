@@ -516,7 +516,7 @@
             if(file.size>3*1024*1024)throw Error('Backup must be smaller than 3 MB');
             const archive=JSON.parse(await file.text());
             if(archive?.format!=='pantry-pal'||archive.version!==1||!Array.isArray(archive.inventory)||!Array.isArray(archive.shoppingList))throw Error('Not a compatible Pantry Pal backup');
-            const validInventory=archive.inventory.every(x=>x&&typeof x.name==='string'&&x.name.length<=100&&['Pantry','Fridge','Freezer'].includes(x.category)&&Number.isFinite(Number(x.quantity))&&Number(x.quantity)>=1&&(!x.expiration||/^\\d{4}-\\d{2}-\\d{2}$/.test(x.expiration)));
+            const validInventory=archive.inventory.every(x=>x&&typeof x.name==='string'&&x.name.length<=100&&['Pantry','Fridge','Freezer'].includes(x.category)&&Number.isFinite(Number(x.quantity))&&Number(x.quantity)>=1&&(!x.expiration||/^\d{4}-\d{2}-\d{2}$/.test(x.expiration)));
             const validList=archive.shoppingList.every(x=>x&&typeof x.name==='string'&&x.name.length<=120&&typeof x.checked==='boolean');
             if(!validInventory||!validList)throw Error('Backup contains invalid items');
             if(!window.confirm('Replace your current pantry and grocery list with this backup? Export your current data first.'))return;
