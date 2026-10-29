@@ -1,81 +1,46 @@
 # Pantry Pal
 
-<p align="center">
-  <img alt="License" src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge">
-  <img alt="Contributions Welcome" src="https://img.shields.io/badge/contributions-welcome-brightgreen?style=for-the-badge">
-  <img alt="Maintained" src="https://img.shields.io/badge/maintained-yes-purple?style=for-the-badge">
-</p>
+A free, responsive kitchen inventory app for tracking what you have, finding recipe ideas and building grocery lists. Built with **React 18 (UMD + Babel Standalone), IndexedDB, Tailwind CSS and Chart.js**.
 
-A smart pantry manager to track your inventory, discover recipes based on what you have, and build shopping lists—entirely offline, no backend or database required.
+**Live demo:** https://tabitha-dev.github.io/Pantry_Pal/  
+**Source:** https://github.com/tabitha-dev/Pantry_Pal
 
-| **View Live Demo** | **Report a Bug** | **Request a Feature** |
-| :---: | :---: | :---: |
-| [**`Try it Now →`**](https://tabitha-dev.github.io/Pantry_Pal/) | [**`Submit an Issue`**](https://github.com/tabitha-dev/Pantry_Pal/issues) | [**`Suggest an Idea`**](https://github.com/tabitha-dev/Pantry_Pal/issues) |
+## Features
 
----
+- Track quantities and optional expiration dates in your **Pantry**, **Fridge** and **Freezer**.
+- Search and filter inventory, add/edit/delete items and see when food is expired or due in seven days.
+- Explore recipes from **TheMealDB**, view rough ingredient name matches and add potentially missing ingredients to your shopping list.
+- Manually add, check off and remove groceries; review a location-based inventory quantity chart with a text summary.
+- Download or restore a JSON backup of your pantry and shopping list.
+- Responsive desktop navigation and four-tab mobile navigation, improved keyboard labels and modal behavior.
+- Local-first storage: the existing IndexedDB database `pantry-pal-db`, version `1`, with the original `inventory` and `shoppingList` stores is preserved.
 
-## Why Use Pantry Pal?
+## Storage and privacy
 
-Pantry Pal gives you instant visibility into what’s in your pantry, fridge, and freezer. It helps you find recipes based on what you have and auto-generates shopping lists for missing ingredients. All your data lives directly in your browser’s IndexedDB, ensuring complete privacy and offline access.
+Pantry Pal saves your inventory and shopping list **locally on your device in your current browser**. It does not automatically synchronize between phones, desktops or browsers. A JSON backup can be downloaded and restored in another browser. Clearing browser site data, using incognito/private browsing or storage restrictions may lose your data.
 
-## Key Features
+Recipe searches are sent to TheMealDB; the app and its CDN-delivered libraries may request internet resources. The first page load and recipe search require network access. **This is not a guaranteed offline-installable PWA.** No account, server database or subscription is required.
 
-* 🗂️ **Inventory Management**: Add, update, or delete items in Pantry, Fridge & Freezer.  
-* 🔍 **Search & Filter**: Live-filter your inventory by name or category.  
-* 🍽️ **Recipe Suggestions**: Fetch recipes & calculate a “match score” against your stock.  
-* 🛒 **Smart Shopping List**: One-click to add missing ingredients to your list.  
-* 📈 **Analytics Dashboard**: Modern charts to visualize inventory breakdown by category.  
-* 💾 **Local Persistence**: Data stored in IndexedDB—completely offline & private.  
+Recipe ingredient matching is a simple name comparison, not a nutritional or allergen checker. Always check actual food freshness and food safety rather than relying solely on a date in the app.
 
----
+## Accessibility, SEO, AEO
 
-## Tech Stack & Tools
+- Mobile/desktop responsive layout and navigation, touch-friendly controls, visible focus indicators, keyboard-accessible dialogs with Escape and focus management, form labels, text analytics and reduced motion.
+- Descriptive page title, canonical URL, summary metadata, share image, sitemap/robots.txt, WebApplication schema and static explanatory FAQs.
+- Automated browser tests across five widths validate representative workflows. A full manual WCAG 2.2 AA and assistive-technology review remains necessary. SEO metadata and FAQ copy do not guarantee indexing or inclusion in AI-generated answers.
 
-This application is built entirely with modern, client-side technologies, making it lightweight, fast, and easy to run anywhere.
+## Run locally
 
-| Technology                   | Purpose                                |
-| :--------------------------- | :------------------------------------- |
-| **React (UMD + Babel)**      | UI rendering without a build step      |
-| **Tailwind CSS**             | Utility-first styling                  |
-| **Chart.js**                 | Interactive data visualizations        |
-| **chartjs-plugin-datalabels**| In-chart data labels                   |
-| **idb**                      | Simplified IndexedDB interactions      |
-| **ThemealDB API**            | Recipe data source                     |
-| **Babel Standalone**         | In-browser JSX compilation             |
+```bash
+git clone https://github.com/tabitha-dev/Pantry_Pal.git
+cd Pantry_Pal
+python -m http.server 8000
+```
 
----
+Open http://localhost:8000. No application build step is required, but this version uses Babel Standalone to compile JSX in the browser, so several external CDN scripts must load before the app renders.
 
-## Getting Started
+## Development notes
 
-This application is a single HTML/JS page and is incredibly simple to use.
+The responsive redesign preserves data compatibility with the original IndexedDB schema. The visual refresh uses lightweight CSS-based food art as a fallback until final OpenArt renders are reviewed and optimized; generated mockups are not represented as functional app screenshots.
 
-1.  **Clone the repo**:  
-    ```bash
-    git clone https://github.com/tabitha-dev/Pantry_Pal.git
-    cd Pantry_Pal
-    ```
-2.  **Serve locally**:  
-    ```bash
-    # Python 3 HTTP server
-    python3 -m http.server 8000
-    ```
-3.  **Open in Browser**:  
-    ```txt
-    http://localhost:8000/
-    ```
-
-### A Note on Data Persistence
-
-Your pantry data is stored in your browser’s IndexedDB. Clearing your site data or browser cache will permanently erase it—be sure to back up any critical information.
-
----
-
-## Contributing
-
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply [open an issue](https://github.com/tabitha-dev/Pantry_Pal/issues) with the tag “enhancement”.
-
-## License
-
-Distributed under the MIT License. See `LICENSE` for more information.  
+See [LICENSE](LICENSE).
