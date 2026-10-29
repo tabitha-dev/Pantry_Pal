@@ -49,6 +49,7 @@ async def main():
    await page.get_by_text("Tomatoes & basil").wait_for()
    await page.get_by_role("checkbox",name="Mark Tomatoes & basil as purchased").click()
    await page.get_by_role("checkbox",name="Mark Tomatoes & basil as not purchased").wait_for()
+   await page.wait_for_function("""() => {const e=document.querySelector('input[aria-label="Mark Tomatoes & basil as not purchased"]');return !!e&&e.checked&&!e.disabled}""")
    await page.reload(wait_until="domcontentloaded")
    await page.get_by_role("checkbox",name="Mark Tomatoes & basil as not purchased").wait_for(timeout=25000)
    if w<768:await page.locator(".pp-nav-mobile").get_by_role("button",name="Insights").click()
