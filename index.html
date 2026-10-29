@@ -146,10 +146,30 @@
         }
         
         function Modal({ isOpen, onClose, children }) {
+          const dialogRef = useRef(null);
+          const openerRef = useRef(null);
+          useEffect(() => {
+            if (!isOpen) return;
+            openerRef.current = document.activeElement;
+            const dialog = dialogRef.current;
+            dialog?.querySelector('input, select, button')?.focus();
+            const onKey = event => {
+              if (event.key === 'Escape') { event.preventDefault(); onClose(); }
+              if (event.key === 'Tab' && dialog) {
+                const focusables = [...dialog.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href]')];
+                if (!focusables.length) return;
+                if (event.shiftKey && document.activeElement===focusables[0]){event.preventDefault();focusables[focusables.length-1].focus();}
+                if (!event.shiftKey && document.activeElement===focusables[focusables.length-1]){event.preventDefault();focusables[0].focus();}
+              }
+            };
+            document.addEventListener('keydown',onKey);
+            const oldOverflow=document.body.style.overflow;document.body.style.overflow='hidden';
+            return () => {document.removeEventListener('keydown',onKey);document.body.style.overflow=oldOverflow;openerRef.current?.focus();};
+          }, [isOpen, onClose]);
           if (!isOpen) return null;
           return (
-            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center" onClick={onClose}>
-              <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="pp-modal-overlay" onMouseDown={event=>{if(event.target===event.currentTarget)onClose();}}>
+              <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Pantry item details" className="pp-dialog">
                 {children}
               </div>
             </div>
@@ -506,23 +526,29 @@
             setShoppingList(await dbService.getAll('shoppingList'));
         };
 
+        const tabs=[['inventory','Inventory','▤'],['recipes','Recipes','✿'],['shopping-list','Shopping list','▣'],['analytics','Insights','◴']];
+        const selectedTab = tab => setView(tab);
         const Header = () => (
-            <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#f4e7ed] px-10 py-4">
-                <div className="flex items-center gap-8">
-                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('inventory')}>
-                        <IconLogo />
-                        <h2 className="text-[#1c0d15] text-lg font-bold">PantryPal</h2>
-                    </div>
-                    <nav className="hidden md:flex items-center gap-9">
-                        {['inventory', 'recipes', 'shopping-list', 'analytics'].map(tab => (
-                            <button key={tab} onClick={() => setView(tab)} className={`capitalize text-sm font-medium ${view === tab ? 'text-[#f655a8]' : 'text-[#1c0d15] hover:text-[#f655a8]'}`}>
-                                {tab.replace('-', ' ')}
-                            </button>
-                        ))}
-                    </nav>
-                </div>
-            </header>
+          <header className="pp-header">
+            <div className="pp-header-inner">
+              <button className="pp-brand" onClick={() => selectedTab('inventory')} aria-label="Pantry Pal home">
+                <span className="pp-brand-mark" aria-hidden="true">✳</span>
+                <span><strong>pantry<span className="pp-brand-accent">pal.</span></strong><small>Your kitchen, organized</small></span>
+              </button>
+              <nav className="pp-nav-desktop" aria-label="Main navigation">
+                {tabs.map(([id,label,symbol]) => <button key={id} onClick={()=>selectedTab(id)} className={view===id?'is-current':''} aria-current={view===id?'page':undefined}><span aria-hidden="true">{symbol}</span>{label}</button>)}
+              </nav>
+              <span className="pp-local-indicator" title="Your inventory and shopping list remain in this browser"><span aria-hidden="true">●</span> Local to this device</span>
+            </div>
+          </header>
         );
+
+        const BottomNav = () => (
+          <nav className="pp-nav-mobile" aria-label="Mobile navigation">
+            {tabs.map(([id,label,symbol]) => <button key={id} type="button" className={view===id?'is-current':''} onClick={()=>selectedTab(id)} aria-current={view===id?'page':undefined}><span aria-hidden="true">{symbol}</span><span>{label}</span></button>)}
+          </nav>
+        );
+
 
         const WelcomeScreen = () => (
             <div className="flex-1 flex items-center justify-center p-4">
@@ -544,16 +570,42 @@
             }
         };
 
+        const now = new Date(); now.setHours(12,0,0,0);
+        const daysUntil = date => {if(!date)return null;const d=new Date(date+'T12:00:00');return Number.isFinite(d.getTime())?Math.round((d-now)/86400000):null;};
+        const expiring = inventory.filter(item=>{const days=daysUntil(item.expiration);return days!==null&&days<=7;}).length;
+        const inventoryCount=inventory.length;
+        const toBuy=shoppingList.filter(item=>!item.checked).length;
         return (
-            <div className="min-h-screen flex flex-col">
-               {view !== 'welcome' && <Header />}
-                <main id="pantry-main" className="flex-grow">
-                    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                        {storageError && <p role="alert" className="pp-error">{storageError}</p>}
-                        {renderView()}
+          <div className="pp-app">
+            <Header />
+            <main id="pantry-main" className="pp-main">
+              <div className="pp-container">
+                {storageError && <p role="alert" className="pp-error">{storageError}</p>}
+                {view === 'inventory' && <div className="pp-hero">
+                  <div className="pp-hero-content">
+                    <span className="pp-eyebrow">FRESHER FOOD. LESS GUESSWORK.</span>
+                    <h1>Your kitchen,<br/><em>all in one place.</em></h1>
+                    <p>Keep track of what you have, use ingredients before they expire, and make shopping simpler.</p>
+                    <div className="pp-hero-actions">
+                      <button onClick={()=>selectedTab('recipes')}>Explore recipes <span aria-hidden="true">↗</span></button>
+                      <button onClick={()=>selectedTab('shopping-list')}>Shopping list</button>
                     </div>
-                </main>
-            </div>
+                  </div>
+                  <div className="pp-hero-art" aria-hidden="true">
+                    <div className="pp-plate"><span>🍋</span><span>🥑</span><span>🥬</span><span>🍅</span></div>
+                    <span className="pp-float pp-float-top">✦</span><span className="pp-float pp-float-bottom">✳</span>
+                  </div>
+                </div>}
+                {view === 'inventory' && <div className="pp-overview" aria-label="Kitchen overview">
+                  <article><span className="pp-stat-icon" aria-hidden="true">▤</span><strong>{inventoryCount}</strong><span>Items in your kitchen</span></article>
+                  <article><span className="pp-stat-icon" aria-hidden="true">◷</span><strong>{expiring}</strong><span>Expired or due in 7 days</span></article>
+                  <article><span className="pp-stat-icon" aria-hidden="true">▣</span><strong>{toBuy}</strong><span>Shopping items left</span></article>
+                </div>}
+                {renderView()}
+              </div>
+            </main>
+            <BottomNav />
+          </div>
         );
     }
 
