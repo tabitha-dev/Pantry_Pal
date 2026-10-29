@@ -31,11 +31,11 @@ async def main():
    await dialog.get_by_role("textbox",name="Item name").fill("Brown rice")
    await dialog.get_by_role("spinbutton",name="Quantity").fill("2")
    await dialog.get_by_role("button",name="Save Item").click()
-   await page.get_by_role("cell",name="Brown rice").wait_for(timeout=8000)
+   await page.get_by_role("cell",name="Brown rice",exact=True).wait_for(timeout=8000)
    await page.get_by_role("button",name="Edit Brown rice").click()
    await dialog.get_by_role("textbox",name="Item name").fill("Brown rice pack")
    await dialog.get_by_role("button",name="Save Item").click()
-   await page.get_by_role("cell",name="Brown rice pack").wait_for()
+   await page.get_by_role("cell",name="Brown rice pack",exact=True).wait_for()
    await page.reload(wait_until="domcontentloaded")
    await page.get_by_role("cell",name="Brown rice pack").wait_for(timeout=25000)
    async with page.expect_download(timeout=15000) as download:
