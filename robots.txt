@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://tabitha-dev.github.io/Pantry_Pal/sitemap.xml
