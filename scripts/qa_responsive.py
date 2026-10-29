@@ -10,10 +10,17 @@ async def main():
   browser=await p.chromium.launch(headless=True,args=["--no-sandbox"])
   for w,h,label in [(320,740,"small"),(390,844,"phone"),(768,900,"tablet"),(1024,768,"laptop"),(1440,900,"desktop")]:
    context=await browser.new_context(viewport={"width":w,"height":h},accept_downloads=True,reduced_motion="reduce")
-   page=await context.new_page();errors=[]
+   page=await context.new_page();errors=[];console=[];requests=[]
    page.on("pageerror",lambda e:errors.append(str(e)))
+   page.on("console",lambda m:console.append(m.text) if m.type=="error" else None)
+   page.on("requestfailed",lambda request:requests.append(request.url))
    await page.goto(URL,wait_until="domcontentloaded",timeout=60000)
-   await page.get_by_role("button",name="Add Item").wait_for(timeout=35000)
+   try:await page.get_by_role("button",name="Add Item").wait_for(timeout=16000)
+   except Exception:
+    diagnostic=await page.evaluate("""() => ({root:document.querySelector('#root')?.innerHTML.slice(0,900),react:typeof window.React,babel:typeof window.Babel,idb:typeof window.idb,ready:document.readyState})""")
+    await page.screenshot(path=str(OUT/"render-failure.png"))
+    print(json.dumps({"errors":errors,"console":console[-15:],"requests":requests[-15:],"diagnostic":diagnostic},indent=2),flush=True)
+    raise
    assert await page.locator(".pp-hero h1").is_visible(),(label,"hero")
    assert await page.locator(".pp-overview article").count()==3,(label,"summary")
    metrics=await page.evaluate("() => ({viewport:innerWidth,scrollWidth:document.documentElement.scrollWidth,hero:document.querySelector('.pp-hero').getBoundingClientRect().width})")
