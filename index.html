@@ -21,8 +21,8 @@
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   
   <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
   
   <!-- idb Library -->
   <script src="https://cdn.jsdelivr.net/npm/idb@7/build/umd.js"></script>
@@ -239,8 +239,9 @@
                         </div>
                     </div>
                     <div className="px-4 py-3">
-                        <div className="overflow-hidden rounded-xl border border-[#e8cedc]">
+                        <div tabIndex="0" role="region" aria-label={`${activeCategory} inventory table, scroll horizontally when needed`} className="overflow-hidden rounded-xl border border-[#e8cedc]">
                             <table className="min-w-full">
+                                <caption className="sr-only">Your {activeCategory} inventory, quantities, expiration dates and edit actions.</caption>
                                 <thead className="bg-[#fcf8fa]">
                                     <tr>
                                         <th className="px-6 py-3 text-left text-sm font-bold text-[#1c0d15] uppercase tracking-wider">Item</th>
@@ -250,11 +251,12 @@
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-[#e8cedc]">
+                                    {filteredItems.length===0 && <tr><td colSpan="4" className="pp-table-empty">{searchTerm ? 'No matching items. Try a different search.' : 'No items here yet. Add something to get started.'}</td></tr>}
                                     {filteredItems.map(item => (
                                         <tr key={item.id} className="hover:bg-[#f4e7ed] transition-colors">
                                             <td className="px-6 py-4 whitespace-nowrap font-medium text-[#1c0d15]">{item.name}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-[#9c4974]">{item.quantity}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-[#9c4974]">{item.expiration}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-[#9c4974]">{item.expiration || 'No date'}{item.expiration && ((new Date(item.expiration+'T12:00:00')-new Date())/86400000 <=7) && <span className="pp-expiry-tag">Check date</span>}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
                                                 <button aria-label={`Edit ${item.name}`} onClick={() => setEditingItem(item)} className="text-blue-600 hover:text-blue-800 transition-colors"><IconEdit/></button>
                                                 <button aria-label={`Delete ${item.name}`} onClick={() => onDelete(item.id)} className="text-red-600 hover:text-red-800 transition-colors"><IconTrash /></button>
@@ -340,7 +342,7 @@
                       const missing = recipe.ingredients.filter(ing => !inventory.map(i => i.name.toLowerCase()).some(invItem => ing.toLowerCase().includes(invItem)));
                       return (
                           <div key={recipe.name} className="bg-white rounded-xl shadow-md overflow-hidden transform hover:-translate-y-1 transition-all">
-                               <img className="h-48 w-full object-cover" src={recipe.image} alt={recipe.name} />
+                               <img className="h-48 w-full object-cover" src={recipe.image} loading="lazy" decoding="async" alt={`Recipe suggestion: ${recipe.name}`} />
                                <div className="p-6">
                                   <h3 className="font-bold text-xl mb-2 text-[#1c0d15]">{recipe.name}</h3>
                                   <div className="mb-4">
