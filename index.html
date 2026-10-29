@@ -96,7 +96,9 @@
           },
           async updateItem(storeName, item) {
             if (!this.db) throw new Error("Database is unavailable");
-            await this.db.put(storeName, item);
+            const tx=this.db.transaction(storeName,'readwrite');
+            await tx.store.put(item);
+            await tx.done;
           },
           async deleteItem(storeName, key) {
             if (!this.db) return;
@@ -366,7 +368,7 @@
       );
     }
 
-    function ShoppingList({ list = [], onClear, onItemCheck, onDeleteItem, onAddManual }) {
+    function ShoppingList({ list = [], onClear, onItemCheck, onDeleteItem, onAddManual, savingItem }) {
         const [draft,setDraft]=useState('');
         return (
             <div className="p-4">
@@ -383,7 +385,7 @@
                         {list.map(item =>
                             <li key={item.name} className="flex justify-between items-center p-2">
                                 <label className="flex items-center">
-                                    <input type="checkbox" checked={item.checked} onChange={() => onItemCheck(item.name)} className="mr-2" aria-label={`Mark ${item.name} as ${item.checked ? 'not purchased' : 'purchased'}`}/>
+                                    <input type="checkbox" checked={item.checked} disabled={savingItem===item.name} onChange={() => onItemCheck(item.name)} className="mr-2" aria-label={`Mark ${item.name} as ${item.checked ? 'not purchased' : 'purchased'}`}/>
                                     <span className={item.checked ? 'line-through text-gray-500' : ''}>{item.name}</span>
                                 </label>
                                 <button aria-label={`Remove ${item.name} from shopping list`} onClick={() => onDeleteItem(item.name)}><IconTrash/></button>
@@ -490,6 +492,7 @@
         const [shoppingList, setShoppingList] = useState([]);
         const [isDbReady, setIsDbReady] = useState(false);
         const [storageError,setStorageError] = useState('');
+        const [savingItem,setSavingItem] = useState(null);
         
         useEffect(() => {
             const init = async () => {
@@ -565,10 +568,12 @@
             const item = shoppingList.find(x=>x.name===itemName);
             if(!item)return;
             const updated={...item,checked:!item.checked};
-            // React-controlled checkboxes must update synchronously, not after an async IDB read.
+            setSavingItem(itemName);
+            // React updates immediately while the IndexedDB transaction commits.
             setShoppingList(prev=>prev.map(x=>x.name===itemName?updated:x));
             try {await dbService.updateItem('shoppingList',updated);}
             catch(error){setStorageError('Unable to save grocery change. Please retry.');setShoppingList(await dbService.getAll('shoppingList'));}
+            finally{setSavingItem(null);}
         };
         const handleDeleteShoppingListItem = async (itemName) => {
             await dbService.deleteItem('shoppingList', itemName);
@@ -613,7 +618,7 @@
             switch (view) {
                 case 'inventory': return <Inventory items={inventory} onAddItem={handleAddItem} onDelete={handleDeleteItem} onUpdateItem={handleUpdateItem} isDbReady={isDbReady} />;
                 case 'recipes': return <Recipes inventory={inventory} onAddToShoppingList={handleAddToShoppingList} />;
-                case 'shopping-list': return <ShoppingList list={shoppingList} onClear={handleClearShoppingList} onItemCheck={handleCheckShoppingListItem} onDeleteItem={handleDeleteShoppingListItem} onAddManual={handleAddManual} />;
+                case 'shopping-list': return <ShoppingList list={shoppingList} onClear={handleClearShoppingList} onItemCheck={handleCheckShoppingListItem} onDeleteItem={handleDeleteShoppingListItem} onAddManual={handleAddManual} savingItem={savingItem} />;
                 case 'analytics': return <Analytics items={inventory} />;
                 default: return <WelcomeScreen />;
             }
