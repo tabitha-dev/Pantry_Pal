@@ -101,3 +101,6 @@ body.pantry-body{font-family:'Manrope',system-ui,-apple-system,sans-serif;backgr
 .pp-data-actions input{position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden}
 .pp-data-actions label:focus-within{outline:3px solid #ac6632;outline-offset:3px}
 @media(max-width:767px){.pp-data-tools{align-items:flex-start;flex-direction:column;padding:14px}.pp-data-actions{width:100%}}
+
+.pp-expiry-tag{display:inline-block;padding:3px 7px;border-radius:7px;background:#fff0df;color:#8b4a20;margin-left:8px;font-size:11px;font-weight:800;white-space:nowrap}
+.pp-table-empty{text-align:center!important;padding:30px 15px!important;color:#5a7166;font-size:14px!important}
