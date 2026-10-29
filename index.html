@@ -502,6 +502,34 @@
             init().catch(error => { console.error('Pantry storage unavailable', error); setStorageError('Your browser did not allow pantry storage. Check browser settings and reload.'); });
         }, []);
 
+        const downloadBackup = async () => {
+          try{
+            const copy = {format:'pantry-pal',version:1,exportedAt:new Date().toISOString(),inventory:await dbService.getAll('inventory'),shoppingList:await dbService.getAll('shoppingList')};
+            const blob=new Blob([JSON.stringify(copy,null,2)],{type:'application/json'});
+            const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='pantry-pal-backup-'+new Date().toISOString().slice(0,10)+'.json';
+            document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
+          }catch(error){setStorageError('Unable to export data. Confirm browser storage is enabled.');}
+        };
+        const restoreBackup = async event => {
+          const input=event.currentTarget,file=input.files?.[0];if(!file)return;
+          try{
+            if(file.size>3*1024*1024)throw Error('Backup must be smaller than 3 MB');
+            const archive=JSON.parse(await file.text());
+            if(archive?.format!=='pantry-pal'||archive.version!==1||!Array.isArray(archive.inventory)||!Array.isArray(archive.shoppingList))throw Error('Not a compatible Pantry Pal backup');
+            const validInventory=archive.inventory.every(x=>x&&typeof x.name==='string'&&x.name.length<=100&&['Pantry','Fridge','Freezer'].includes(x.category)&&Number.isFinite(Number(x.quantity))&&Number(x.quantity)>=1&&(!x.expiration||/^\\d{4}-\\d{2}-\\d{2}$/.test(x.expiration)));
+            const validList=archive.shoppingList.every(x=>x&&typeof x.name==='string'&&x.name.length<=120&&typeof x.checked==='boolean');
+            if(!validInventory||!validList)throw Error('Backup contains invalid items');
+            if(!window.confirm('Replace your current pantry and grocery list with this backup? Export your current data first.'))return;
+            const tx=dbService.db.transaction(['inventory','shoppingList'],'readwrite');
+            await tx.objectStore('inventory').clear();
+            await tx.objectStore('shoppingList').clear();
+            for(const item of archive.inventory)await tx.objectStore('inventory').put(item);
+            for(const item of archive.shoppingList)await tx.objectStore('shoppingList').put(item);
+            await tx.done;
+            setInventory(await dbService.getAll('inventory'));setShoppingList(await dbService.getAll('shoppingList'));setStorageError('');
+          }catch(error){setStorageError('Could not restore backup: '+(error.message||'Invalid data'));}
+          finally{input.value='';}
+        };
         const handleAddItem = async (item) => {
             await dbService.addItem('inventory', item);
             setInventory(await dbService.getAll('inventory'));
@@ -619,6 +647,10 @@
                   <article><span className="pp-stat-icon" aria-hidden="true">◷</span><strong>{expiring}</strong><span>Expired or due in 7 days</span></article>
                   <article><span className="pp-stat-icon" aria-hidden="true">▣</span><strong>{toBuy}</strong><span>Shopping items left</span></article>
                 </div>}
+                {view==='inventory' && <section className="pp-data-tools" aria-label="Pantry data backup">
+                  <div><strong>Private to this browser</strong><p>Items save locally in IndexedDB. They do not automatically sync across phones or computers.</p></div>
+                  <div className="pp-data-actions"><button type="button" onClick={downloadBackup} disabled={!isDbReady}>Download backup</button><label>Restore backup<input aria-label="Choose Pantry Pal JSON backup to restore" type="file" accept=".json,application/json" disabled={!isDbReady} onChange={restoreBackup}/></label></div>
+                </section>}
                 {renderView()}
               </div>
             </main>
