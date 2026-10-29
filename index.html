@@ -3,7 +3,19 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="description" content="Pantry Pal Your smart pantry manager" />
+  <title>Pantry Pal | Pantry Inventory, Recipes & Shopping Lists</title>
+  <meta name="description" content="Pantry Pal helps you track pantry, fridge and freezer items, plan meals with recipe suggestions, and build grocery lists. Free, browser-based, and mobile-friendly." />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="theme-color" content="#f8f7ed" />
+  <link rel="canonical" href="https://tabitha-dev.github.io/Pantry_Pal/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Pantry Pal | Organize Your Kitchen" />
+  <meta property="og:description" content="Manage kitchen inventory, find recipe ideas and organize a shopping list with private browser storage." />
+  <meta property="og:url" content="https://tabitha-dev.github.io/Pantry_Pal/" />
+  <meta property="og:image" content="https://tabitha-dev.github.io/Pantry_Pal/social-preview.svg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Pantry Pal","url":"https://tabitha-dev.github.io/Pantry_Pal/","description":"Free browser-based pantry inventory, recipe discovery and grocery list organizer using local IndexedDB storage.","applicationCategory":"LifestyleApplication","operatingSystem":"Any","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"featureList":["Pantry and freezer inventory","Expiration tracking","Recipe suggestions","Shopping list","Kitchen inventory analytics"]}</script>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -29,10 +41,19 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
   
-  <title>Pantry Pal</title>
+  <link rel="stylesheet" href="./pantry-theme.css" />
 </head>
-<body class="bg-[#fcf8fa]">
+<body class="pantry-body">
+  <a class="pp-skip" href="#pantry-main">Skip to kitchen dashboard</a>
   <div id="root"></div>
+  <section id="about-pantry-pal" class="pp-seo-content" aria-labelledby="pp-about-title">
+    <h2 id="pp-about-title">A smarter way to use what is in your kitchen</h2>
+    <p>Pantry Pal is a free, browser-based kitchen inventory and grocery planner. Track ingredients in your pantry, fridge, and freezer, review expiration dates, discover recipe ideas, and build a shopping list.</p>
+    <details><summary>Where does Pantry Pal save my items?</summary><p>Inventory and shopping lists are stored in this browser's IndexedDB on this device. Your entries do not automatically sync to other devices. Clearing browser data can delete them.</p></details>
+    <details><summary>Can I find recipes using what I already have?</summary><p>Pantry Pal fetches recipe ideas from TheMealDB and compares ingredient names with your inventory. Results are suggestions, not dietary or food-safety advice, and recipe search requires an internet connection.</p></details>
+    <details><summary>Does Pantry Pal work offline?</summary><p>Saved inventory data remains in this browser, but the first page load and some scripts require internet connectivity, and live recipe searches require a network connection. The app is not a guaranteed offline-installed app.</p></details>
+    <details><summary>Is Pantry Pal free?</summary><p>Yes. It is an open-source project with no registration or subscription requirement.</p></details>
+  </section>
   
   <script type="text/babel" data-presets="react">
     window.onload = function() {
@@ -72,6 +93,10 @@
                  console.error("Failed to add/update item:", e);
             }
             await tx.done;
+          },
+          async updateItem(storeName, item) {
+            if (!this.db) throw new Error("Database is unavailable");
+            await this.db.put(storeName, item);
           },
           async deleteItem(storeName, key) {
             if (!this.db) return;
@@ -137,7 +162,7 @@
             const [newItem, setNewItem] = useState({ name: '', category: 'Pantry', quantity: 1, expiration: '' });
             const [searchTerm, setSearchTerm] = useState('');
             const [activeCategory, setActiveCategory] = useState('Pantry');
-            const isFormValid = newItem.name && newItem.expiration;
+            const isFormValid = !!newItem.name.trim() && Number.isFinite(Number(newItem.quantity)) && Number(newItem.quantity) >= 1;
 
             useEffect(() => {
                 if (editingItem) {
@@ -159,6 +184,7 @@
             };
             const handleSaveItem = () => {
                 if (!isFormValid) return;
+                newItem.name = newItem.name.trim();
                 if (editingItem) {
                     onUpdateItem(newItem);
                 } else {
@@ -189,7 +215,7 @@
                     <div className="p-4">
                         <div className="relative">
                             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-[#9c4974]"><IconSearch /></div>
-                            <input placeholder={`Search in ${activeCategory}...`} className="form-input w-full rounded-xl text-[#1c0d15] border-none bg-[#f4e7ed] h-12 placeholder:text-[#9c4974] pl-12 text-base" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                            <input placeholder={`Search in ${activeCategory}...`} aria-label={`Search ${activeCategory} inventory`} className="form-input w-full rounded-xl text-[#1c0d15] border-none bg-[#f4e7ed] h-12 placeholder:text-[#9c4974] pl-12 text-base" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                         </div>
                     </div>
                     <div className="px-4 py-3">
@@ -210,8 +236,8 @@
                                             <td className="px-6 py-4 whitespace-nowrap text-[#9c4974]">{item.quantity}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-[#9c4974]">{item.expiration}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
-                                                <button onClick={() => setEditingItem(item)} className="text-blue-600 hover:text-blue-800 transition-colors"><IconEdit/></button>
-                                                <button onClick={() => onDelete(item.id)} className="text-red-600 hover:text-red-800 transition-colors"><IconTrash /></button>
+                                                <button aria-label={`Edit ${item.name}`} onClick={() => setEditingItem(item)} className="text-blue-600 hover:text-blue-800 transition-colors"><IconEdit/></button>
+                                                <button aria-label={`Delete ${item.name}`} onClick={() => onDelete(item.id)} className="text-red-600 hover:text-red-800 transition-colors"><IconTrash /></button>
                                             </td>
                                         </tr>
                                     ))}
@@ -222,12 +248,12 @@
                     <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
                         <h2 className="text-2xl font-bold mb-6 text-[#1c0d15]">{editingItem ? 'Edit Item' : 'Add New Item'}</h2>
                         <div className="space-y-4">
-                             <input type="text" placeholder="Item Name" className="form-input w-full rounded-xl text-[#1c0d15] border-[#e8cedc] bg-white h-12 placeholder:text-[#9c4974]" value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} />
-                             <select className="form-select w-full rounded-xl text-[#1c0d15] border-[#e8cedc] bg-white h-12" value={newItem.category} onChange={e => setNewItem({...newItem, category: e.target.value})}>
+                             <input type="text" aria-label="Item name" maxLength="100" placeholder="Item Name" className="form-input w-full rounded-xl text-[#1c0d15] border-[#e8cedc] bg-white h-12 placeholder:text-[#9c4974]" value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} />
+                             <select aria-label="Storage location" className="form-select w-full rounded-xl text-[#1c0d15] border-[#e8cedc] bg-white h-12" value={newItem.category} onChange={e => setNewItem({...newItem, category: e.target.value})}>
                                 {['Pantry', 'Fridge', 'Freezer'].map(cat => <option key={cat} value={cat}>{cat}</option>)}
                              </select>
-                             <input type="number" placeholder="Quantity" className="form-input w-full rounded-xl text-[#1c0d15] border-[#e8cedc] bg-white h-12 placeholder:text-[#9c4974]" min="1" value={newItem.quantity} onChange={e => setNewItem({...newItem, quantity: parseInt(e.target.value)})} />
-                             <input type="date" className="form-input w-full rounded-xl text-[#1c0d15] border-[#e8cedc] bg-white h-12" value={newItem.expiration} onChange={e => setNewItem({...newItem, expiration: e.target.value})} />
+                             <input type="number" aria-label="Quantity" placeholder="Quantity" className="form-input w-full rounded-xl text-[#1c0d15] border-[#e8cedc] bg-white h-12 placeholder:text-[#9c4974]" min="1" value={newItem.quantity} onChange={e => setNewItem({...newItem, quantity: Number(e.target.value)})} />
+                             <input type="date" aria-label="Expiration date, optional" className="form-input w-full rounded-xl text-[#1c0d15] border-[#e8cedc] bg-white h-12" value={newItem.expiration} onChange={e => setNewItem({...newItem, expiration: e.target.value})} />
                         </div>
                         <div className="mt-8 flex justify-end gap-3">
                              <button onClick={handleCloseModal} className="rounded-xl h-10 px-5 text-[#1c0d15] text-sm font-bold">Cancel</button>
@@ -246,7 +272,7 @@
         const fetchRecipes = async () => {
             setIsLoading(true);
             try {
-                const response = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${searchTerm}`);
+                const response = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(searchTerm)}`);
                 const data = await response.json();
                 const formattedRecipes = (data.meals || []).map(meal => ({
                     name: meal.strMeal,
@@ -280,7 +306,7 @@
                <div className="px-4 py-3">
                    <div className="relative">
                       <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-[#9c4974]"><IconSearch /></div>
-                      <input onKeyDown={e => { if (e.key === 'Enter') setSearchTerm(e.target.value) }} placeholder="Search for recipes..." className="form-input w-full rounded-xl text-[#1c0d15] border-none bg-[#f4e7ed] h-12 placeholder:text-[#9c4974] pl-12 text-base"/>
+                      <input aria-label="Search recipes by name" onKeyDown={e => { if (e.key === 'Enter') setSearchTerm(e.target.value.trim()) }} placeholder="Search for recipes..." className="form-input w-full rounded-xl text-[#1c0d15] border-none bg-[#f4e7ed] h-12 placeholder:text-[#9c4974] pl-12 text-base"/>
                    </div>
               </div>
               {isLoading ? <div className="text-center p-10">Loading...</div> : 
@@ -319,7 +345,7 @@
             <div className="p-4">
                 <div className="flex justify-between items-center mb-4">
                     <h1 className="text-2xl font-bold">Shopping List</h1>
-                    <button onClick={onClear} className="text-red-500">Clear All</button>
+                    <button disabled={!list.length} onClick={() => {if (window.confirm("Clear all shopping items?")) onClear();}} className="text-red-700">Clear All</button>
                 </div>
                 {list.length === 0 ? <p className="text-gray-500">Your list is empty.</p> :
                     <ul className="border rounded divide-y">
@@ -329,7 +355,7 @@
                                     <input type="checkbox" checked={item.checked} onChange={() => onItemCheck(item.name)} className="mr-2"/>
                                     <span className={item.checked ? 'line-through text-gray-500' : ''}>{item.name}</span>
                                 </label>
-                                <button onClick={() => onDeleteItem(item.name)}><IconTrash/></button>
+                                <button aria-label={`Remove ${item.name} from shopping list`} onClick={() => onDeleteItem(item.name)}><IconTrash/></button>
                             </li>
                         )}
                     </ul>
@@ -425,21 +451,23 @@
     // --- Main App Component ---
     
     function App() {
-        const [view, setView] = useState('welcome');
+        const [view, setView] = useState('inventory');
         const [inventory, setInventory] = useState([]);
         const [shoppingList, setShoppingList] = useState([]);
         const [isDbReady, setIsDbReady] = useState(false);
+        const [storageError,setStorageError] = useState('');
         
         useEffect(() => {
             const init = async () => {
                 await dbService.init('pantry-pal-db', 1);
+                if (!dbService.db) throw new Error('Pantry database could not be opened');
                 setIsDbReady(true);
                 const inv = await dbService.getAll('inventory');
                 const sl = await dbService.getAll('shoppingList');
                 setInventory(inv);
                 setShoppingList(sl);
             };
-            init();
+            init().catch(error => { console.error('Pantry storage unavailable', error); setStorageError('Your browser did not allow pantry storage. Check browser settings and reload.'); });
         }, []);
 
         const handleAddItem = async (item) => {
@@ -519,8 +547,9 @@
         return (
             <div className="min-h-screen flex flex-col">
                {view !== 'welcome' && <Header />}
-                <main className="flex-grow">
-                    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <main id="pantry-main" className="flex-grow">
+                    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        {storageError && <p role="alert" className="pp-error">{storageError}</p>}
                         {renderView()}
                     </div>
                 </main>
