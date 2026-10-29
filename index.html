@@ -561,13 +561,14 @@
             await dbService.clearStore('shoppingList');
             setShoppingList([]);
         };
-        const handleCheckShoppingListItem = async (itemName) => {
-            const item = await dbService.getItem('shoppingList', itemName);
-            if (item) {
-                item.checked = !item.checked;
-                await dbService.updateItem('shoppingList', item);
-                setShoppingList(await dbService.getAll('shoppingList'));
-            }
+        const handleCheckShoppingListItem = async itemName => {
+            const item = shoppingList.find(x=>x.name===itemName);
+            if(!item)return;
+            const updated={...item,checked:!item.checked};
+            // React-controlled checkboxes must update synchronously, not after an async IDB read.
+            setShoppingList(prev=>prev.map(x=>x.name===itemName?updated:x));
+            try {await dbService.updateItem('shoppingList',updated);}
+            catch(error){setStorageError('Unable to save grocery change. Please retry.');setShoppingList(await dbService.getAll('shoppingList'));}
         };
         const handleDeleteShoppingListItem = async (itemName) => {
             await dbService.deleteItem('shoppingList', itemName);
