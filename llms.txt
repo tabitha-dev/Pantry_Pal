@@ -1,0 +1,12 @@
+# Pantry Pal
+
+Pantry Pal is a free, browser-based inventory manager built with React, Tailwind CSS, Chart.js and IndexedDB.
+
+Website: https://tabitha-dev.github.io/Pantry_Pal/
+Repository: https://github.com/tabitha-dev/Pantry_Pal
+
+Features: track pantry, fridge and freezer items, optional expiration dates, search items, discover recipe suggestions using TheMealDB, add missing recipe ingredients or manual shopping items, and view inventory quantity charts.
+
+Data: inventory and shopping lists are saved in the user's local IndexedDB in their browser. Backup and restore are manual JSON exports. No account or automatic cloud synchronization. Recipe results and external scripts require an internet connection. No claim of full offline support.
+
+Accessibility: keyboard focus and modal dialogs, visible label text for inputs, readable chart summaries, reduced motion and mobile navigation; full manual WCAG 2.2 AA testing remains needed.
